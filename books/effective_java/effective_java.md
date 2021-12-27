@@ -5,6 +5,8 @@
 3. [모든 객체의 공통 메서드](#3장.-모든-객체의-공통-메서드)
    - [규칙9. equals를 재정의할 때는 반드시 hashCode도 재정의하라](#규칙9.-equals를-재정의할-때는-반드시-hashCode도-재정의하라)
 4. [클래스와 인터페이스](#4장.-클래스와-인터페이스)
+   - [규칙13. 클래스와 멤버의 접근 권한은 최소화하라](#규칙13.-클래스와-멤버의-접근-권한은-최소화하라)
+   - [규칙14. public 클래스 안에는 public 필드를 두지 말고 접근자 메서드를 사용하라](#규칙14.-public-클래스-안에는-public-필드를-두지-말고-접근자-메서드를-사용하라)
 5. [제네릭](#5장.-제네릭)
 6. [열거형(enum)과 어노테이션](#6장.-열거형(enum)과-어노테이션)
 7. [메서드](#7장.-메서드)
@@ -24,6 +26,7 @@
 
 ---
 ## 3장. 모든 객체의 공통 메서드
+
 #### 규칙9. equals를 재정의할 때는 반드시 hashCode도 재정의하라
 - 같은 객체는 같은 해시코드 값을 가져야 한다.
 - equals(Object) 메서드가 같다고 판정한 두 객체의 hashCode 값은 같아야 한다.
@@ -56,6 +59,56 @@ private volatile int hashCode;
 
 ---
 ## 4장. 클래스와 인터페이스
+
+#### 규칙13. 클래스와 멤버의 접근 권한은 최소화하라
+* 잘 설계된 모듈은 구현 세부사항을 전부 API 뒤쪽에 감춘다.
+  * 정보은닉(information hiding) 또는 캡슐화(encapsulation)
+* 정보은닉이 중요한 이유는: 모듈 사이의 의존성을 낮춰서(decouple) 
+  * 개별적으로 개발, 시험, 최적화, 이해, 변경할 수 있게 한다.
+  * 재사용 가능성을 높인다.
+* 단순한 원칙: **각 클래스와 멤버는 가능한 한 접근 불가능하도록 만든다**
+  * 최상위 레벨 클래스와 인터페이스에 부여할 수 있는 접근 권한은 package-private과 public 두가지인데, 
+   가능한 package-private으로 해야한다.
+  * 멤버들 중 private과 package-private 멤버들은 구현 세부사항이고 공개 API가 아니지만,
+   Serializable을 구현하는 클래스의 멤버라면 공개 API 속으로 새어나갈 수 있다. (leak)
+  * public 클래스의 멤버들의 경우, package-private 보다 protected 는 사용 범위가 매우 넓아진다. 자제한다.
+* 상위 클래스 메서드를 재정의 할 때는 원래 메서드의 접근 권한보다 낮은 권한 설정이 안된다. (컴파일 에러)
+* 테스트 때문에 인터페이스, 또는 멤버들의 접근 권한을 열 때도 어느 선까지는 괜찮으나, package-private 정도 까지만 한다.
+* 객체(instance) 필드는 절대 public 선언 안된다.
+  * 필드 저장 값을 제한할 수 없고, 따라서 불변식 강제가 안된다. 변경 시 특정 동작 실행도 안된다.
+  * 변경 가능 public 필드를 가진 클래스는 다중 스레드에 안전하지 않다.
+* 길이가 0 아닌 배열은 변경 가능하므로, public static final 배열 필드를 두거나,
+ 배열 필드를 반환하는 접근자(accesor)를 정의하면 안된다.
+  * 이런 배열은 클라이언트가 배열 내용을 변경할 수 있게 되므로, 보안에 문제가 생긴다.
+~~~java
+// 보안 문제가 생길 수 있는 코드
+public static final Thing[] VALUE = { ... };
+
+///
+
+// 해결방법 1
+private static final Thing[] PRIVATE_VALUES = { ... };
+public static final List<Thing> VALUES = Collections.unmodifiableList(Arrays.asList(PRIVATE_VALUES));
+
+///
+
+// 해결방법 2
+private static final Thing[] PRIVATE_VALUES = { ... };
+public static final Thing[] values() {
+    return PRIVATE_VALUES.clone();
+}
+
+// 선택의 기준은, 클라이언트 측에서 어떤 자료형을 선호할 지, 성능은 뭐가 나을지.
+~~~
+
+* 요약하면,
+  * 접근 권한은 낮춰라
+  * 최소한의 public API 를 설계하고, 다른 모든 클래스/인터페이스/멤버 는 API 에서 제외하라
+  * public static final 필드를 제외하고 public 필드는 없어야 한다.
+    * public static final 필드가 참조하는 객체는 변경 불가능한 객체로 만든다.
+---
+
+#### 규칙14. public 클래스 안에는 public 필드를 두지 말고 접근자 메서드를 사용하라
 
 
 ---
@@ -90,4 +143,5 @@ private volatile int hashCode;
 
 ### Reference
 - Effective Java 2/E
-  No newline at end of file
+
+
