@@ -110,6 +110,22 @@ public static final Thing[] values() {
 
 #### 규칙14. public 클래스 안에는 public 필드를 두지 말고 접근자 메서드를 사용하라
 
+- public 클래스에서 public 필드를 두는 것은 쓰레기
+  - 데이터 캡슐화가 필요하다. 
+  - private 으로 바꾸고 public 접근자 메서드 (getter), and 필요하다면 수정자(mutator) 메서드 (setter) 를 만들어 쓴다.
+- package-private 클래스나, private 중첩클래스(nested class)는 데이터 필드를 공개해도 잘못이라 할 수 없다.
+  - 클래스가 추상화하려는 내용을 제대로 기술하기만 한다면.
+  - 클래스 정의나 클라이언트 코드나 getter 메서드보다 시각적으로 깔끔해 보인다.
+  - package-private: 클래스 내부 표현을 변경해도 패키지 외부 코드는 변경되지 않는다.
+  - private (nested class): 클래스 바깥 클래스 외부의 코드는 영향받지 않는다.
+- 변경불가능한(immutable) 객체는 그나마 심각성이 덜하다.
+
+* 요약하면,
+  * public 클래스는 변경 가능 필드를 외부로 공개하면 안된다.
+  * 변경 불가능 필드인 경우에는 외부로 공개해도 많이 위험하진 않지만, 그럴 필요는 없을 듯 하다.
+  * but, package-private, private nested class 의 필드는 변경 가능 여부와 상관없이 외부 공개가 바람직할 때도 있다.
+
+####
 
 ---
 ## 5장. 제네릭
