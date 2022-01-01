@@ -11,6 +11,7 @@
 5. [제네릭](#5장.-제네릭)
 6. [열거형(enum)과 어노테이션](#6장.-열거형(enum)과-어노테이션)
 7. [메서드](#7장.-메서드)
+   - [규칙43. null 대신 빈 배열이나 컬렉션을 반환하라](#규칙43.-null-대신-빈-배열이나-컬렉션을-반환하라)
 8. [일반적인 프로그래밍 원칙들](#8장.-일반적인-프로그래밍-원칙들)
 9. [예외](#9장.-예외)
 10. [병행성](#10장.-병행성)
@@ -171,8 +172,41 @@ public class PhysicalConstants {
 
 ---
 ## 7장. 메서드
+#### 규칙43. null 대신 빈 배열이나 컬렉션을 반환하라
+- 어느 상황에 null 을 반환하게 해두면 클라이언트 입장에서는 그에 대비한 코드를 만들게 된다.
+- 빈 배열이나 컬렉션 대신 null 을 반환하는 메서드는 구현하기도 더 까다롭다.
+- null 을 반환하는 것으로 배열 할당 비용을 피한다?
+  - 프로파일링 결과로 해당 메서드가 성능 저하의 원인인 것이 확인 된다면 인정
+  - 길이가 0 인 배열은 변경 불가능(immutable) 하므로 아무 제약 없이 재사용 할 수 있다.
+~~~java
+// 컬렉션에서 배열을 만들어 반환하는 올바른 방법
+private final List<Cheese> cheesesInStock = ...;
+private static final Cheese[] EMPTY_CHEESE_ARRAY = new Cheese[0];
 
+/**
+ * return 재고가 남은 모든 치즈 목록을 배열로 만들어 반환
+ */
+public Cheese[] getCheeses() {
+    // 컬렉션이 비어있는 경우, 인자로 주어진 빈 배열을 쓴다.
+    return cheesesInStock.toArray(EMPTY_CHEESE_ARRAY);
+}
+~~~
+~~~java
+// 컬렉션 복사본을 반환하는 올바른 방법
+public List<Cheese> getCheeseList() {
+    if (cheesesInStock.isEmpty()) {
+        return Collections.emptyList();
+    } else {
+        return new ArrayList<Cheese>(cheesesInStock);
+    }
+}
+~~~
 
+* 어쨌든 요약하면,
+  * null 대신에 빈 배열이나 빈 컬렉션을 반환하라
+
+* null 반환은 c 언어의 관습으로, c 에서는 배열 길이가 배열과 따로 반환되어서,  
+ 길이가 0 인 배열을 할당해서 반환해도 아무 이득이 없다.
 ---
 ## 8장. 일반적인 프로그래밍 원칙들
 
