@@ -53,22 +53,25 @@ SELECT * FROM table_1 WHERE first_name = 'Anne';
 ~~~
 - 문자열 'words' 와 "words" 는 쿼리에서 동작하지만, 작은따옴표가 관습적
 - 숫자를 따옴표 안에 넣은 쿼리도 동작함
-|작은따옴표 필요|따옴표 필요없음 |
-|----|----|
+
+|작은따옴표 필요|따옴표 필요없음|
+|---|---|
 |CHAR|DEC|
 |VARCHAR|INT|
 |DATE| |
 |DATETIME, TIME, TIMESTAMP| |
 |BLOB| |
+
 - 문자열 내에 작은 따옴표가 있으면, (문자열의 일부임을 표기한다)
-  - 앞에 백슬래시 (\') 를 붙이거나 -> 더 관습적임
-  - 작은따옴표를 하나 더 붙인다 ('')
+  - 앞에 백슬래시 ( \\' ) 를 붙이거나 -> 더 관습적임
+  - 작은따옴표를 하나 더 붙인다 ( '' )
 - SELECT * 보다는 특정 열들을 SELECT 해서 결과를 제한한다.
   - 가독성을 올리기 위함도 있고,
   - 데이터 조회 속도도 더 빠르다. (테이블이 클 수록)
 - 쿼리를 외부에서 복붙하여 사용할 때, 문법이 맞는 것 같은데 에러가 나면 편집기를 거쳐서 온다.
-- 비교연산자 ( <> -> != )
+- 비교연산자 ( <>  와 != 는 같다.)
 - 비교연산자로 문자열 처리도 가능하다.
+  - 제일 앞글자가 a 보다 뒤의 문자인 문자열 등..
 ~~~mysql
 -- 첫번째 문자가 'L' 이상인 문자를 찾는다.
 SELECT drink_name FROM drink_info WHERE drink_name >= 'L';
@@ -80,6 +83,10 @@ SELECT drink_name FROM drink_info WHERE calories IS NULL;
 - LIKE 는 와일드카드 문자와 사용 가능하다
   - % : 다수의 불특정 문자를 대신하는 문자
   - _ : 하나의 불특정 문자를 대신하는 문자
+~~~mysql
+SELECT first_name FROM my_contacts WHERE first_name LIKE '%im';
+SELECT first_name FROM my_contacts WHERE first_name LIKE '_im';
+~~~
 - BETWEEN 키워드로 범위를 사용한다. (>=, <=)
 ~~~mysql
 -- 30 <= x <= 60
