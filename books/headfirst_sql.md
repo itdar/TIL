@@ -113,9 +113,12 @@ SELECT data_name FROM black_book WHERE rating NOT IN ('innovative', 'fabulous');
 | _| LIKE와 쓰는 와일드카드 문자 (단일)|
 |<>|!=|
 
-
-
 ## 3. DELETE 와 UPDATE
+~~~mysql
+-- 테이블에서 해당 조건에 맞는 레코드(행)를 삭제한다.
+- DELETE FROM table_1 WHERE column_1 = 'value1';
+~~~
+
 ## 4. 좋은 테이블 설계: 정규화는 왜 하죠?
 ## 5. ALTER: 과거 다시 쓰기
 ## 6. 고급 SELECT
