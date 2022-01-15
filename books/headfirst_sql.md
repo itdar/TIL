@@ -115,9 +115,42 @@ SELECT data_name FROM black_book WHERE rating NOT IN ('innovative', 'fabulous');
 
 ## 3. DELETE 와 UPDATE
 ~~~mysql
--- 테이블에서 해당 조건에 맞는 레코드(행)를 삭제한다.
-- DELETE FROM table_1 WHERE column_1 = 'value1';
+-- 테이블에서 해당 조건에 맞는 모든 레코드(행)를 삭제한다.
+DELETE FROM table_1 WHERE column_1 = 'value1';
 ~~~
+~~~mysql
+INSERT INTO table_1 VALUES (column1, column2);
+~~~
+
+**테이블에서 행의 순서가 시간 순이라고 할 수 없음**
+* 테이블에 저장되는 순서는 다양한 요소에 의해 정해짐
+  * 어느 회사 데이터베이스 인지, 열에 인덱스가 있는지 등
+
+**DELETE**
+* 한 열이나 여러 열의 값을 지우는데는 사용 할 수 없다.
+  * WHERE 절에 따라서 한 행이나 여러 행들을 지울 수 있다.
+* WHERE 절은 SELECT 문에서 썼던 WHERE 절과 같아서 LIKE, IN, BETWEEN 등 조건 사용 가능하다.
+* 조건을 안넣어서 전체 테이블 날리는 것 주의
+
+**WHERE 절을 사용하는 쿼리문은 SELECT 를 먼저 해보고 조건이 맞는지 확인해 볼 수 있다.**
+
+**UPDATE 문은: 조건 SELECT(확인) -> 새로운 내용 INSERT(삽입) -> 기존 내용 DELETE(삭제)**
+~~~mysql
+UPDATE table_1 SET column_name = 'newValue'
+    WHERE column_name = 'oldValue';
+~~~
+- WHERE 절을 뺴고 업데이트 하면, 모든 행에 대해 SET 절에 명시된 각 열의 값이 새 값으로 업데이트 된다..
+- 내가 원하는 행만 변경하는지 어떻게 확인? -> SELECT 문을 먼저 해본다.
+
+**UPDATE 문은: 아래처럼 기본적인 수학 연산도 수행 가능**
+~~~mysql
+UPDATE drink_info
+SET cost = cost + 1
+WHERE drink_name = 'Blue Moon'
+OR drink_name = 'Oh My Gosh';
+~~~
+- 수학연산 뿐 아니라 문자 변수도 연산이 있음
+  - UPPER(), LOWER() -> 대문자 / 소문자 변경 등
 
 ## 4. 좋은 테이블 설계: 정규화는 왜 하죠?
 ## 5. ALTER: 과거 다시 쓰기
