@@ -22,10 +22,11 @@ CREATE DATABASE database_1
 
 USE database_1;
 
-CREATE TABLE table_1 {
-    value1 CHAR(1) NOT NULL,
-    value2 INT NOT NULL
-};
+CREATE TABLE table_1
+(
+  value1 CHAR(1) NOT NULL,
+  value2 INT     NOT NULL
+);
 
 DROP TABLE table_1;
 
