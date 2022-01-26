@@ -274,7 +274,139 @@ ADD PRIMARY KEY (id);
   
 
 ## 5. ALTER: 과거 다시 쓰기
+```mysql
+-- 예시
+-- 테이블에 전화번호 컬럼을 추가하는데, 위치는 이름 컬럼 바로 뒤에 넣는다.
+-- FIRST, SECOND, THIRD, FOURTH... , AFTER, LAST, FIRST 위치 지정도 가능하다.
+ALTER TABLE table_name
+ADD COLUMN phone VARCHAR(20) AFTER name;
+```
+```mysql
+-- 예시
+-- 연락처테이블에 아이디컬럼을 추가하는데, 자동증가 키값으로 가장 앞 열에 추가한다.
+ALTER TABLE contacts
+ADD COLUMN contact_id INT NOT NULL AUTO_INCREMENT FIRST,
+ADD PRIMARY KEY (contact_id);
+```
+
+#### 데이터 변경 (데이터 손실에 유의한다.)
+- CHANGE: 기존 열의 `이름`과 `데이터타입`을 바꾼다.
+- MODIFY: 기존 열의 `데이터타입`이나 `위치`를 바꾼다.
+- ADD: 테이블에 열을 추가한다. (데이터타입 설정 가능)
+- DROP: 열을 제거한다.
+```mysql
+-- 예시
+ALTER TABLE projekts
+RENAME TO project_list;
+
+ALTER TABLE project_list
+CHANGE COLUMN number proj_id INT NOT NULL AUTO_INCREMENT,
+ADD PRIMARY KEY (proj_id);
+
+ALTER TABLE project_list
+CHANGE COLUMN descriptionofproj proj_desc VARCHAR(100),
+CHANGE COLUMN contractoronjob con_name VARCHAR(30);
+```
+> 데이터 타입을 새롭게 바꾸면 데이터를 잃을 수 있다.
+  
+- 테이블 설계 시점에 데이터 열 순서에 대해 생각해보는 것이 좋다. (하지만 조회를 자유롭게 할 수 있어서 크게 상관없음)
+  
+
+- **테이블 당 1개의 필드만 AUTO INCREMENT 가 있을 수 있고, 정수 타입이고 NULL 이 아니어야 한다.**
+  
+<br>
+
+**문자 함수들: 실제 값을 변화시키지 않고, 쿼리 결과로 반환된 문자열을 변환**
+  - SUBSTRING: SUBSTRING(your_string, start_position, length)
+  - SUBSTRING_INDEX: 찾는 문자의 해당 숫자번째로 찾아진 문자까지 출력한다. 
+```mysql
+SUBSTRING_INDEX('Hello, world, bye,', ',', 2)
+-- 'Hello, world'
+```
+  - RIGHT: RIGHT('Hello, 2) -> 'lo'
+  - LEFT: LEFT('Hello', 4) -> 'Hell'
+  - UPPER: 문자열 대문자로 변환
+  - LOWER: 문자열 소문자로 변환
+  - REVERSE: 문자열 역순으로 만듦
+  - LTRIM: 왼쪽 공백 제거
+  - RTRIM: 오른쪽 공백 제거
+  - LENGTH: 문자열 길이 반환
+
 ## 6. 고급 SELECT
+  **<>** -> **!=**
+#### CASE
+```mysql
+-- 예시
+-- 무비테이블에서 카테고리를 업데이트하는데,
+-- 드라마가 트루이면 'drama' 로,
+-- 코메디가 트루이면 'comedy' 로,
+-- 조건에 없으면 'misc' 로 업데이트 한다.
+UPDATE movie_table
+SET category =
+    CASE
+        WHEN drama = 'T' THEN 'drama'
+        WHEN comedy = 'T' THEN 'comedy'
+        -- ...
+        ELSE 'misc'
+    END;
+```
+- CASE 문이 동작 할 때, 윗줄의 조건에 해당하는 것이 있으면 아랫줄로 내려오지 않는다.
+- ELSE 문은 뺄 수 있지만, 조건이 없는 경우 NULL 외에 다른 값이 좋다. (ELSE 도 없고 조건에도 없으면 CRUD 동작하지 않는다.)
+- END 뒤에 WHERE 절을 붙여서 해당 조건의 행에서만 CASE 문을 실행하도록 할 수 있다.
+- CASE 문은 SELECT, INSERT, DELETE, UPDATE 모두 사용 가능하다.
+  
+#### ORDER BY
+```mysql
+-- 예시
+-- 타이틀, 카테고리, 구매날짜를 무비테이블에서 조회하는데
+-- 카테고리가 Family 인 것들을 조회하고,
+-- 카테고리는 오름차순 정렬하고, 카테고리 내부에서는 구매날짜의 내림차순으로 정렬한다.
+SELECT title, category, purchased
+FROM movie_table
+WHERE category = 'Family'
+ORDER BY category ASC, purchased DESC;
+```
+- 결과를 정해둔 기준으로 정렬한다. (오름차순(ASC), 내림차순(DESC))
+- SQL 순서 규칙
+  - 알파벳이 아닌 문자들은 숫자의 앞과 뒤에 온다.
+  - 숫자는 알파벳 앞에 온다.
+  - NULL 은 숫자 앞에 온다.
+  - NULL 은 알파벳 앞에 온다.
+  - 대문자는 소문자 앞에 온다.
+  - "A 1" 은 "A1" 앞에 온다.
+- SQL 순서 규칙 (기호)
+  - ! " & ' * + = ? @ ~
+#### SUM, AVG, MIN, MAX, COUNT (함수) + GROUP BY, DISTINCT (키워드)
+```mysql
+-- 예시
+-- sales 를 조회해서 합산한 값을 보여주는데,
+-- 쿠키세일 테이블에서 조회,
+-- 이름으로 그룹핑한 것에서 조회하여,
+-- sales 합산 값의 내림차순으로 보여주는데,
+-- 0부터 2개 (0,1) 까지만 보여준다. (또는 그냥 LIMIT 2)
+SELECT SUM(sales)
+FROM cookie_sales
+GROUP BY name
+ORDER BY SUM(sales) DESC
+LIMIT 0, 2;
+```
+```mysql
+-- 예시
+SELECT DISTINCT COUNT(sale_date)
+FROM cookie_sales
+ORDER BY sale_date;
+```
+- GROUP BY
+  - 공통된 열 값으로 행들을 집계한다.
+- DISTINCT
+  - 한 열에 같은 값이 여러개인 레코드들이 많고, 중복된 값들이 외에 어떤 값들이 있는지 확인 할 때 사용
+  - 중복 없이 유일한 값을 한번 반환한다.
+- LIMIT
+  - 몇개의 행을 반환할지, 어디부터 몇개 행을 반환할지 정한다.
+  
+
+- NULL 은 MIN, MAX, COUNT 에 영향받지 않음
+
 ## 7. 테이블이 여러개인 데이터베이스 설계
 ## 8. 조인과 다중 테이블 연산
 ## 9. 서브 쿼리: 쿼리 안의 쿼리
