@@ -1,4 +1,4 @@
-# Java, Mockito, Mock... example.
+# Mock 이란? 예제와 함께 보자. (Java, Mockito, Mock... example)
 
 ```java
 import static org.assertj.core.api.Assertions.assertThat;
