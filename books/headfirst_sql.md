@@ -561,8 +561,122 @@ CREATE TABLE interests (
 - 합성키: 여러열로 구성된 기본키로 유일무이 한 값
 
 ## 8. 조인과 다중 테이블 연산
+- 정규화 되지 않은 테이블 설계 때문에 쿼리를 만들기가 어려움.
+  - ex) my_contacts 테이블에서, interests 는 원자화 되어있지 않음
+    - 컬럼을 추가해서 나눈다 (아직 같은 데이터 열들이 반복되긴 함)
+      - interest1 = SUBSTRING_INDEX(interests, ',', 1);
+      - SUBSTR(interests, LENGTH(interest1) + 2);
+  
+
+- SELECT 문을 이용하여 새로운 테이블을 채우는 법
+  - 여러 방법을 알면 상황에 가장 맞는 방법을 선택 할 수 있고, 같은 일을 여러 방법으로 수행 할 수 있으면 최적화에 도움이 된다.
+```mysql
+-- 1. CREATE table 그리고 SELECT 를 이용한 INSERT
+CREATE TABLE profession
+(
+    id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    profession VARCHAR(20)
+);
+
+INSERT INTO profession (profession)
+    SELECT profession FROM my_contacts
+    GROUP BY profession
+    ORDER BY profession;
+    
+-- 2. SELECT 를 이용해서 테이블을 만들고 ALTER 를 사용해서 기본키 추가
+CREATE TABLE profession AS 
+    SELECT profession FROM my_contacts
+    GROUP BY profession
+    ORDER BY profession;
+
+ALTER TABLE profession
+ADD COLUMN id INT NOT NULL AUTO_INCREMENT FIRST,
+ADD PRIMARY KEY (id);
+```
+```mysql
+-- 3. 기본키와 SELECT 문의 데이터를 포함한 테이블을 한 문장으로 생성
+CREATE TABLE profession
+(
+    id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    profession VARCHAR(20)
+) AS 
+SELECT profession FROM my_contacts
+GROUP BY profession
+ORDER BY profession;
+
+-- 3번과 같이 새 테이블이 새로운 이름의 2개 열을 갖는다고 표시하지 않았다면,
+-- AS 는 한 열을 SELECT 의 결과와 같은 이름, 타입을 만듦 (2번처럼)
+```
+
+<br>
 
 
+#### 별명(alias) 만드는 방법: 처음 나오는 열 이름 뒤에 AS 와 함께 별명을 붙인다.
+- AS 는 생략 가능
+- 별명은 원래 열의 이름은 변하지 않고, 잠깐 사용된다.
+- 테이블 별명은 연결이름(correlation name) 이라고 부른다. 
+```mysql
+CREATE TABLE profession
+(
+    id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    profession VARCHAR(20)
+) AS 
+SELECT profession AS mc_prof FROM my_contacts
+GROUP BY mc_prof
+ORDER BY mc_prof;
+```
+
+## Join
+### Inner Join (내부조인)
+- `내부조인`은 쿼리의 조건에 따라 일부 결과열이 제거된 크로스 조인
+#### 카티젼 조인 (Cartesian join, Cartesian product, Cross product, Cross join...)
+- 내부 조인의 한 종류
+  - 다른 내부조인 모두 기본적으로 카티젼 조인의 결과 중 일부가 쿼리의 조건에 의해 제거 됨
+- 필요한 이유: 
+  - 조인 문장 수정에 도움이 되고, 
+  - DB 시스템과 환경의 성능 확인에 사용된다. 
+  - 슬로 쿼리 사용 시 걸리는 시간을 더 쉽게 비교, 확인 가능하다.
+- 너무 큰 테이블을 크로스 조인하면 다운 될 위험
+```mysql
+SELECT t.toy, b.boy
+FROM toys AS t 
+    CROSS JOIN
+    boys AS b;
+ 
+-- cross join 없애고 콤마로 대체 가능 
+SELECT toys.toy, boys.boy
+FROM toys, boys;
+```
+
+#### 내부 조인 ( 동등조인(=), 비동등조인(<>) )
+- **조건을 사용하여 두 테이블의 레코드를 결합**
+- 결합된 행들이 조건을 만족할 경우에만 열들이 반환됨
+```mysql
+SELECT someColumns
+FROM table1
+    INNER JOIN
+    table2
+ON table1.something = table2.something  -- ON 대신 WHERE 가능
+    OR table1.something <> table2.something;
+```
+#### 내부 조인 (자연조인)
+- 일치하는 열 이름을 사용하는 `내부조인`
+- 두 테이블에 같은 이름의 열이 있을 때 동작
+```mysql
+SELECT boys.boy, toys.toy
+FROM boys
+    NATURAL JOIN 
+    toys;
+```
+
+> `외부조인`의 경우에는 테이블을 조인하는 순서가 중요함 (10장)
+
+#### 정리
+- 내부조인(INNER JOIN): 조건을 사용해서 두 테이블의 레코드를 결합하는 모든 조인
+  - 동등조인(EQUI JOIN): 같은 행들 반환
+  - 비동등조인(NON-EQUI JOIN): 같지 않은 행들 반환
+- 자연조인(NATURAL JOIN): ON 절이 없는 내부조인. 같은 열 이름을 가진 두 테이블을 조인할 때만 동작한다. 
+- 크로스조인(CROSS JOIN, Comma JOIN): 한 테이블의 모든 행과 다른 테이블의 모든 행이 연결되는 모든 경우를 반환 (=`카티젼조인`)
 
 ## 9. 서브 쿼리: 쿼리 안의 쿼리
 ## 10. 외부 조인, 셀프 조인, 유니온
