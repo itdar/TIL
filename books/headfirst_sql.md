@@ -17,7 +17,9 @@
 8. [조인과 다중 테이블 연산](#8.-조인과-다중-테이블-연산)
 
 9. [서브 쿼리: 쿼리 안의 쿼리](#9.-서브-쿼리:-쿼리-안의-쿼리)
+
 10. [외부 조인, 셀프 조인, 유니온](#10.-외부-조인,-셀프-조인,-유니온)
+
 11. [제약사항, 뷰, 트랜잭션](#11.-제약사항,-뷰,-트랜잭션)
 12. [보안](#12.-보안)
 
@@ -494,10 +496,6 @@ CREATE TABLE interests (
 - 테이블을 분리하고 연결테이블을 쓰면, 조인을 사용한 쿼리를 사용 가능하다.
   - 테이블 조인을 사용하면 데이터의 무결성(integrity)을 유지하는데 도움이 된다.
 
-### 객체 지향과의 패러다임 차이?
-- 관계형 데이터베이스 (RDBMS) 의 테이블 사이의 관계는: 키, 참조키 값을 통해서 해당하는 것을 갖고 있는지를 확인한다.
-- 객체지향에서 객체 사이의 관계는: 객체들 사이의 어떤 관계가 있는지를 확인한다.
-
 #### 제 1 정규형 (1NF)
 - 열은 원자적 값만을 포함한다.
 - 같은 데이터가 여러 열에 반복되지 않는다.
@@ -509,9 +507,9 @@ CREATE TABLE interests (
 
 ## 함수적 종속
 - 열의 데이터가 변경될 때, 다른 열의 데이터가 변경되어야 하면, 변경되어야 하는 열은 변경되는 열에 함수적으로 종속하고 있는 것.
-- ex) 영웅이름 -> 영응이름의 이니셜 (T.x ->; T.y, T 라는 테이블에서 열 y는 열 x에 함수적으로 종속된다)
+- ex) 영웅이름 -> 영응이름의 이니셜 (T.x -> T.y, T 라는 테이블에서 열 y는 열 x에 함수적으로 종속된다)
   - 이니셜은 이름에 종속, 약점은 이름에 종속, 도시는 나라에 종속 등...
-- T.x ->; T.y (shorthand notation, 줄임 표기법)
+- T.x -> T.y (shorthand notation, 줄임 표기법)
 
 ### 부분적 함수 종속
 - 키가 아닌 열이 합성키의 전부가 아닌 일부에 종속되는 경우
@@ -629,7 +627,10 @@ ORDER BY mc_prof;
 ## Join
 ### Inner Join (내부조인)
 - `내부조인`은 쿼리의 조건에 따라 일부 결과열이 제거된 크로스 조인
-#### 카티젼 조인 (Cartesian join, Cartesian product, Cross product, Cross join...)
+
+<br>
+
+#### 1. 카티젼 조인 (Cartesian join, Cartesian product, Cross product, Cross join...)
 - 내부 조인의 한 종류
   - 다른 내부조인 모두 기본적으로 카티젼 조인의 결과 중 일부가 쿼리의 조건에 의해 제거 됨
 - 필요한 이유: 
@@ -648,7 +649,7 @@ SELECT toys.toy, boys.boy
 FROM toys, boys;
 ```
 
-#### 내부 조인 ( 동등조인(=), 비동등조인(<>) )
+#### 2. 내부 조인 ( 동등조인(=), 비동등조인(<>) )
 - **조건을 사용하여 두 테이블의 레코드를 결합**
 - 결합된 행들이 조건을 만족할 경우에만 열들이 반환됨
 ```mysql
@@ -659,9 +660,10 @@ FROM table1
 ON table1.something = table2.something  -- ON 대신 WHERE 가능
     OR table1.something <> table2.something;
 ```
-#### 내부 조인 (자연조인)
+#### 3. 내부 조인 (자연조인)
 - 일치하는 열 이름을 사용하는 `내부조인`
 - 두 테이블에 같은 이름의 열이 있을 때 동작
+- 동등조인과 유사
 ```mysql
 SELECT boys.boy, toys.toy
 FROM boys
@@ -669,7 +671,11 @@ FROM boys
     toys;
 ```
 
+<br>
+
 > `외부조인`의 경우에는 테이블을 조인하는 순서가 중요함 (10장)
+
+<br>
 
 #### 정리
 - 내부조인(INNER JOIN): 조건을 사용해서 두 테이블의 레코드를 결합하는 모든 조인
@@ -679,6 +685,113 @@ FROM boys
 - 크로스조인(CROSS JOIN, Comma JOIN): 한 테이블의 모든 행과 다른 테이블의 모든 행이 연결되는 모든 경우를 반환 (=`카티젼조인`)
 
 ## 9. 서브 쿼리: 쿼리 안의 쿼리
+### 서브쿼리: 다른 쿼리에 싸여진 쿼리 = 내부쿼리
+- 연산자를 사용해서 하나의 값, 혹은 한 열의 한 행을 (셀, 스칼라) 반환하며, 반환된 값은 WHERE 절의 열들과 비교된다. (대부분은 하나의 결과)
+- 서브 쿼리의 동작
+  - 내부 쿼리 동작 후, 그 내용을 이용해서 외부 쿼리 동작함 (비상관쿼리)
+- 조인으로도 처리 가능함
+- WHERE 절 같은 역할을 함
+- 서브쿼리는 언제나 SELECT 문 한개
+- SELECT, INSERT, UPDATE, DELETE 와 함께 사용 가능함
+- 쿼리할 질문을 나누어 각 부분에 작은 쿼리를 만드는 방법이 좋음
+  - ex) 연봉이 가장 많은 웹 디자이너와 같은 연봉을 버는 사람을 찾으려 한다면,
+    1. 가장 연봉이 많은 웹 디자이너를 찾는다
+    2. 연봉이 X 인 사람을 찾는다
+    - 첫번째 쿼리의 답을 X 에다가 넣어서 돌린다.
+
+ex) 아래 동일한 쿼리
+```mysql
+-- 쿼리 2회
+SELECT mc.first_name, mc.last_name, mc.phone, jc.title
+FROM job_current AS jc NATURAL JOIN my_contacts AS mc
+WHERE
+    jc.title IN ('Cook', 'Hairdresser', 'Waiter', 'Web Designer', 'Web Developer');
+
+-- 서브쿼리 사용 (IN 을 사용하는 것은 예외적인 경우이긴 함, 보통 1개 결과를 반환하게 사용함)
+SELECT mc.first_name, mc.last_name, mc.phone, jc.title
+FROM job_current AS jc NATURAL JOIN my_contacts AS mc
+WHERE
+    jc.title IN (SELCT title FROM job_listings);
+```
+- 하나의 쿼리로 충분하지 않으면: 서브 쿼리를 사용한다.
+
+#### 열 별명 (AS 사용) 
+- 결과 컬럼의 이름 가독성을 높임 
+- 임시로 사용하기 때문에 테이블에 영향을 주지 않음
+
+### 서브 쿼리 생성의 예
+- ex) 가장 연봉이 높은 사람의 이름과 연봉을 찾는다. (my_contacts, job_currents) 
+```mysql
+-- 1
+SELECT MAX(salary) FROM job_current;
+
+-- 2
+SELECT mc.first_name, mc.last_name
+FROM my_contacts AS mc;
+
+-- 3
+SELECT mc.first_name, mc.last_name, jc.salary
+FROM my_contacts AS mc
+NATURAL JOIN job_currents AS jc;
+
+-- 4
+SELECT mc.first_name, mc.last_name, jc.salary
+FROM my_contacts AS mc
+NATURAL JOIN job_currents AS jc
+WHERE jc.salary = (SELECT MAX(jc.salary) FROM job_current jc);
+```
+### 서브 쿼리를 SELECT `열`에서 사용
+- 서브 쿼리는 SELECT 문의 열 중 하나로 사용될 수 있음
+- 서브쿼리가 열의 표현식으로 사용되었다면, 한 열에서 하나의 값만을 반환할 수 있음
+```mysql
+SELECT mc.first_name, mc.last_name,
+(SELECT state 
+FROM zip_code
+WHERE mc.zip_code = zip_code) AS state
+FROM my_contacts AS mc;
+```
+
+### 자연 조인을 포함한 서브 쿼리의 예
+```mysql
+-- 1
+SELECT jc.salary
+FROM my_contacts mc NATURAL JOIN job_current AS jc
+WHERE email = 'andy@weatherorama.com';
+
+-- 2
+SELECT mc.first_name, mc.last_name, jc.salary
+FROM my_contacts AS mc
+NATURAL JOIN job_current AS jc
+WHERE jc.salary > 
+    (SELECT jc.salary 
+    FROM my_contacts AS mc
+    NATURAL JOIN job_current AS jc
+    WHERE email = 'andy@weatherorama.com');
+```
+
+### 비상관 서브쿼리 (non-correlated)
+- 서브쿼리가 외부쿼리의 어떤 것도 참조하지 않고 단독으로 사용되는 것
+- 내부쿼리는 외부쿼리의 값과는 아무 상관이 없음 (단독으로 쿼리 실행 가능)
+
+### 상관 서브쿼리 (correlated)
+- 응답 시간이 느린 편
+- 내부 쿼리의 값이 결정되는데 외부 쿼리에 의존함
+- 외부 쿼리에서 만들어진 테이블과 같은 별명 (상관 이름) 을 사용함
+- 일반적인 용례
+  - 외부 쿼리에 있는 행들에서 관련 테이블에 없는 모든 행을 찾는 것
+  - ex) my_contacts 의 사람들 중 job_current 테이블에 없는 모든 사람을 찾는다.
+```mysql
+SELECT mc.first_name, mc.last_name, mc.email
+FROM my_contacts mc
+WHERE NOT EXISTS
+  (SELECT * FROM job_current jc
+    WHERE mc.contact_id = jc.contact_id);
+```
+
 ## 10. 외부 조인, 셀프 조인, 유니온
+#### 조인이 서브쿼리보다는 훨씬 빠르다.
+
+
+
 ## 11. 제약사항, 뷰, 트랜잭션
 ## 12. 보안
