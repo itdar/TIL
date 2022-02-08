@@ -788,6 +788,59 @@ WHERE NOT EXISTS
     WHERE mc.contact_id = jc.contact_id);
 ```
 
+### 서브쿼리 예제(Join, Noncorrelated subquery)
+```mysql
+-- 1. job_listings 테이블에서 가장 연봉이 높은 직업들의 이름을 나열 (my_contacts, job_listings)
+SELECT jl.title FROM job_listings AS jl
+WHERE jl.salary = (SELECT MAX(jl.salary) FROM job_listings AS jl);
+
+-- 2. 평균 연봉보다 많은 연봉인 사람의 이름을 나열 (my_contacts, job_current) 
+SELECT mc.name FROM my_contacts AS mc
+INNER JOIN job_current AS jc
+    ON mc.contact_id = jc.contact_id
+WHERE jc.salary > (SELECT AVG(salary) FROM job_current);
+
+-- 3. job_listings 테이블에서 웹디자이너에 대한 우편번호와 같은 우편번호를 갖는 웹 디자이너를 찾아라 (my_contacts, job_current, job_listings)
+SELECT zip FROM job_listings WHERE title = 'Web Developer';
+
+SELECT mc.name FROM my_contacts AS mc
+INNER JOIN job_current AS jc
+    ON mc.contact_id = jc.contact_id
+WHERE jc.title = 'Web Developer'
+    AND mc.zip_code IN (
+        SELECT zip_code FROM job_listings WHERE title = 'Web Developer'
+  );
+
+-- 4. 현재의 연봉이 가장 많은 사람과 같은 우편번호에 사는 모든 사람을 나열 (my_contacts, job_current)
+-- 쪼개서 순서대로 구현
+-- 연봉 가장 많은 사람
+SELECT MAX(salary) FROM job_current;
+-- 연봉 가장 많은 사람의 우편번호
+SELECT mc.zip_code FROM my_contacts AS mc
+INNER JOIN job_current AS jc
+    ON mc.contact_id = jc.contact_id
+WHERE jc.salary = (SELECT MAX(salary) FROM job_current);
+-- 연봉 가장 많은 사람의 우편번호와 같은 사람들
+SELECT mc.name FROM my_contacts AS mc
+WHERE mc.zip_code = (SELECT mc.zip_code FROM my_contacts AS mc
+    INNER JOIN job_current AS jc
+        ON mc.contact_id = jc.contact_id
+    WHERE jc.salary = (SELECT MAX(salary) FROM job_current)
+);
+```
+
+#### 정리
+- 외부쿼리
+  - 내부쿼리, 즉 서브쿼리를 포함한 쿼리
+- 내부쿼리 = 서브쿼리
+  - 쿼리 안의 쿼리 (쿼리 안에 싸여진 쿼리)
+- 비상관 서브쿼리
+  - 외부쿼리의 내용을 참조하지 않고 독립적으로 수행할 수 있는 서브쿼리
+- 상관 서브쿼리
+  - 외부쿼리에서 반환된 값에 의존하는 서브쿼리
+
+<br>
+
 ## 10. 외부 조인, 셀프 조인, 유니온
 #### 조인이 서브쿼리보다는 훨씬 빠르다.
 
