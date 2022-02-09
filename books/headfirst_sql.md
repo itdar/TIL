@@ -842,9 +842,200 @@ WHERE mc.zip_code = (SELECT mc.zip_code FROM my_contacts AS mc
 <br>
 
 ## 10. 외부 조인, 셀프 조인, 유니온
-#### 조인이 서브쿼리보다는 훨씬 빠르다.
+#### `조인이 서브쿼리보다는 훨씬 빠르다.`
 
+- 자신을 참조하는 참조키 (SELF REFERENCE KEY)
+  - 같은 테이블 내의 기본키를 가리키는 참조키로, 특정 목적에 이용됨
+- 셀프 조인 (INNER JOIN)
+  - 셀프 조인을 사용하여 하나의 테이블을 같은 정보의 테이블이 두 개 인 것처럼 쿼리를 실행 가능함
+- 왼쪽 외부 조인 (LEFT OUTER JOIN)
+  - 왼쪽 외부 조인은 왼쪽 테이블의 모든 행들을 가져다 오른쪽 테이블의 행에 대응시킴
+- 오른쪽 외부 조인 (RIGHT OUTUER JOIN)
+  - 오른쪽 외부 조인은 오른쪽 테이블의 모든 행을 가져다 왼쪽 테이블의 행에 대응시킴
+- UNION, UNION ALL
+  - UNION 은 SELECT 의 열 리스트를 기반으로 두 개 이상 쿼리의 결과를 합해 하나의 테이블에 나타냄
+  - UNION 은 중복된 값들은 하나만 표시하고, UNION ALL 은 중복값을 모두 표시함
+- CREATE TABLE AS
+  - SELECT 문의 결과로 테이블을 만들 때 사용함
+- INTERSECT
+  - 첫번째 쿼리의 결과와 두번째 쿼리의 결과 모두에서 나오는 값들을 구할 때 사용
+- EXCEPT
+  - 첫번째 쿼리의 결과이면서 두번째 쿼리의 결과는 아닌 값들만을 구할 때 이 키워드 사용
 
+### LEFT OUTER JOIN (왼쪽 외부 조인)
+- 왼쪽 테이블의 `모든 행`을 가져다 오른쪽 테이블의 행과 비교한다.
+- 왼쪽 테이블과 오른쪽 테이블이 일대다 관계에 있을 때 유용함
+- 왼쪽 외부 조인에서는 FROM 뒤에 그리고 조인 전에 나오는 테이블이 왼쪽 테이블이고, 조인 뒤에 나오는 테이블이 오른쪽 테이블
+- 외부조인 (OUTER JOIN)
+  - 다른 테이블과 일치하는 것이 있는가에 상관없이 행을 반환함
+    - 일치하는 것이 없으면 NULL 값으로 표시함
+    - 소녀와 장난감의 경우, 결과가 NULL 값이면 특정 장난감이 어느 소녀한테도 속하지 않는다는 의미
+- 왼쪽 외부 조인의 결과가 NULL 값이면, 
+  - 오른쪽에 왼쪽 테이블에 상응하는 값이 없다는 의미
+
+### RIGHT OUTER JOIN
+- 오른쪽 외부 조인은 오른쪽 테이블을 왼쪽 테이블과 비교함
+- 방향만 다르고 왼쪽 외부 조인과 같은 방식
+- 그럼에도 오른쪽/왼쪽 외부 조인을 사용하는 이유는?
+  - 쿼리에서 테이블의 순서를 변경하는 것보다 LEFT/RIGHT 바꾸는 것이 쉬움
+
+#### ex)
+**girls** (left table)
+
+|girl_id|girl|toy_id|
+|---|---|---|
+|1|Jane|3|
+|2|Sally|4|
+|3|Cindy|1|
+
+<br>
+
+**toys** (right table)
+
+|toy_id|toy|
+|---|---|
+|1|hula hoop|
+|2|balsa glider|
+|3|toy soldiers|
+|4|harmonica|
+|5|baseball cards|
+|6|tinker toys|
+|7|etch-a-sketch|
+|8|slinky|
+
+<br>
+
+**result** of `LEFT OUTER JOIN`
+
+|girl|toy|
+|---|---|
+|Cindy|hula hoop|
+|Jane|toy soldiers|
+|Sally|harmonica|
+
+<br>
+
+**result** of `RIGHT OUTER JOIN`
+
+|girl|toy|
+|---|---|
+|Cindy|hula hoop|
+|null|balsa glider|
+|Jane|toy soldiers|
+|Sally|harmonica|
+|null|baseball cards|
+|null|tinker toys|
+|null|etch-a-sketch|
+|null|slinky|
+
+```mysql
+SELECT g.girl, t.toy FROM girls g 
+LEFT OUTER JOIN toys t 
+    ON g.toy_id = t.toy_id;
+```
+
+### 자신을 참조하는 참조키 (OUTER, INNER, ...)
+- 같은 테이블을 외부 조인의 오른쪽 테이블과 왼쪽 테이블로 사용할 수 있다.
+- 같은 테이블에서 다른 목적으로 사용되는 테이블의 기본키
+
+### 셀프 조인 (SELF JOIN)
+- 정규화 된 데이터베이스에서, 같은 테이블을 두 개 사용할 일은 없음
+  - 대신, 시뮬레이션하기 위해 셀프 조인을 사용
+- SELF JOIN 을 통해서 하나의 테이블로 같은 정보를 가진 테이블이 두 개 있는 것처럼 쿼리를 보낼 수 있다.
+```mysql
+SELECT c1.name, c2.name AS boss
+FROM clown_info c1
+INNER JOIN clown_info c2
+    ON c1.boss_id = c2.id;
+```
+
+### UNION
+- 두 개 이상의 테이블을 묶는 방법으로 유니온을 쓴다.
+  - 유니온은 SELECT 의 열 리스트를 바탕으로 두 개 이상 쿼리의 결과를 하나의 테이블로 합침
+  - 유니온의 결과를 각 SELECT 의 값들이 `겹쳐진` 결과라고 보면 됨 (`합쳐진`)
+- ORDER BY 는 마지막에 1개만 받을 수 있음 (여러 셀렉문의 결과를 합친 후 결과를 만들어 내기 때문에)
+- 각 SELECT 문의 열 수는 같아야 함
+- 각 SELECT 문에 표현식과 집계 함수도 같아야 함
+- 순서는 무관함
+- 유니온 결과에서 중복값은 하나로 나오는 것이 디폴트
+- 열의 데이터 타입은 `같거나` 서로 `변환 가능한 값`
+- 특별한 이유로 중복을 보고 싶으면 `UNION ALL` 을 사용하면 됨
+```mysql
+SELECT title FROM job_current
+UNION
+SELECT title FROM job_desired
+UNION
+SELECT title FROM job_listings
+ORDER BY title;
+```
+
+#### UNION 으로 테이블 만들기 (CREATE TABLE AS)
+- 유니온으로 반환되는 데이터 타입이 무엇인지 알기 쉽지 않음,
+  - CREATE TABLE AS 문으로 유니온 결과를 테이블로 만들고 살펴본다.
+```mysql
+CREATE TABLE my_union AS
+SELECT title FROM job_current
+UNION
+SELECT title FROM job_desired
+UNION
+SELECT title FROM job_listings
+ORDER BY title;
+```
+
+### INTERSECT 와 EXCEPT
+- 유니온과 거의 같은 방식으로 사용 됨
+  - 겹치는 부분, 겹치지 않는 부분을 찾는다.
+```mysql
+-- 앞 뒤 테이블 모두에 있는 직업이름들만 나옴
+SELECT title FROM job_current
+INTERSECT
+SELECT title FROM job_desired;
+
+-- 먼저 나온 테이블의 직업이름 중, 뒤의 테이블에 없는 직업이름들만 나옴
+SELECT title FROM job_current
+EXCEPT
+SELECT title FROM job_desired;
+```
+
+### 서브쿼리를 조인으로 바꾼다.
+- 대부분의 경우 조인이 빠르게 실행 됨 
+- 조인이 이해하기 쉬움(?)
+- 조인은 SELECT 에 only, 서브쿼리는 CRUD 가능
+```mysql
+-- subquery
+SELECT mc.first_name 
+     , mc.last_name 
+     , mc.phone
+     , jc.title
+  FROM job_current AS jc
+NATURAL JOIN my_contacts AS mc
+WHERE jc.title IN (SELECT title FROM job_listings);
+
+-- join (subquery 를 포함한 WHERE 절은 내부조인으로 대체 가능함)
+SELECT mc.first_name, mc.last_name, mc.phone, jc.title
+FROM job_current AS jc
+INNER JOIN my_contacts AS mc
+    ON jc.contact_id = mc.contact_id
+INNER JOIN job_listings AS jl
+    ON jc.title = jl.title;
+```
+
+### 셀프조인을 서브쿼리로 바꾼다. (ex)
+- 셀프조인을 서브쿼리로 바꿀 때, 
+  - 서브쿼리가 외부쿼리의 결과에 의존하기 때문에, 아래 서브 쿼리는 상관쿼리 
+  - 서브쿼리는 열 리스트의 자리에 위치함
+```mysql
+-- inner join
+SELECT c1.name, c2.name AS boss
+FROM clown_info c1
+INNER JOIN clown_info c2
+    ON c1.boss_id = c2.id;
+    
+-- subquery
+SELECT c1.name, 
+    (SELECT name FROM clown_info WHERE c1.boss_id = id) AS boss
+FROM clown_info AS c1;
+```
 
 ## 11. 제약사항, 뷰, 트랜잭션
 ## 12. 보안
