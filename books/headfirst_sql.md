@@ -21,6 +21,7 @@
 10. [외부 조인, 셀프 조인, 유니온](#10.-외부-조인,-셀프-조인,-유니온)
 
 11. [제약사항, 뷰, 트랜잭션](#11.-제약사항,-뷰,-트랜잭션)
+
 12. [보안](#12.-보안)
 
 
@@ -1038,4 +1039,135 @@ FROM clown_info AS c1;
 ```
 
 ## 11. 제약사항, 뷰, 트랜잭션
+> 사람들이 잘못된 데이터를 입력하지 못하도록, 유저에 따라 일부만을 볼 수 있게, 사람들이 데이터를 동시에 입력할 때 엉키지 않도록 할 방법이 필요함
+
+- 트랜잭션: 하나의 단위로 함께 수행되는 쿼리의 집합, 방해없이 모두 수행될 수 없으면 아무것도 수행될 수 없음
+  - START TRANSACTION; COMMIT; ROLLBACK;
+- VIEW 뷰: 쿼리의 결과를 테이블로 다룰 때, 뷰를 사용. 복잡한 쿼리를 간단한 쿼리로 바꿀 떄 좋음
+  - 업데이트 가능한 뷰: 뷰와 관련 테이블의 데이터를 변경할 수 있는 뷰. 관련 테이블들의 NOT NULL 인 열들만을 포함할 때 가능
+  - 업데이트 불가능한 뷰: 뷰와 관련된 테이블에 데이터를 INSERT 하거나 UPDATE 하는 데 이용할 수 없는 뷰
+- CHECK 제약조건: 특정 값들만이 테이블에 추가되고 변경되게 한다.
+- CHECK OPTION: 업데이트 가능한 뷰에 대한 INSERT 와 UPDATE 가 뷰의 WHERE 절을 만족하게 한다.
+
+### 제약조건 (CONSTRAINT)
+- NOT NULL, PRIMARY KEY, FOREIGN KEY, UNIQUE
+- +CHECK (넣으려는 값이 체크 조건에 맞지 않으면 에러가 발생함)
+  - MySQL 에서는 체크가 데이터의 무결성을 강제하지 않음: 호환성을 위해 체크 제약조건을 사용해서 테이블을 만들 수 있지만 효과가 없음
+    - VIEW 를 만들어서 WITH CHECK OPTION 으로 제약조건 흉내낼 수 있음
+    - BEFORE INSERT, BEFORE UPDATE 의 trigger 를 만들 수 있다.
+  - 체크 조건으로는 WHERE 절에 사용되는 조건들(AND,OR,IN,NOT,BETWEEN 등) 사용 가능함. 단, 서브쿼리는 사용할 수 없음.
+```mysql
+-- 신규 제작 테이블
+CREATE TABLE piggy_bank
+(
+    id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+    coin CHAR(1) CHECK (coin IN ('P', 'N', 'D', 'Q'))
+);
+
+-- 기존 테이블 수정
+ALTER TABLE my_contacts
+ADD CONSTRAINT CHECK gender IN ('M', 'F');
+```
+
+### 뷰 (VIEW)
+- 반복해서 사용하는 쿼리가 있을 경우 사용함 (텍스트파일 복붙은 파일이 수정되거나 지워질 수 있음)
+- 실제 쿼리에서 뷰를 사용할 때, 뷰는 서브쿼리처럼 동작함
+```mysql
+-- VIEWE 만들기
+CREATE VIEW web_designers AS
+    SELECT mc.first_name, mc.last_name, mc.phone, mc.email
+    FROM my_contacts AS mc
+    NATURAL JOIN job_desired jd
+    WHERE jd.title = 'Web Designer';
+
+-- VIEW 확인 (뷰를 테이블처럼 다룸)
+SELECT * FROM web_designers;
+
+-- 동작 방식
+SELECT * FROM
+(
+    SELECT mc.first_name, mc.last_name, mc.phone, mc.email
+    FROM my_contacts mc
+    NATURAL JOIN job_desired jd
+    WHERE jd.title = 'Web Designer'
+) AS web_designers;
+```
+- FROM 절에는 테이블이 나와야 함 (AS web_designers 가 있는 이유)
+  - SELECT 문이 가상테이블을 반환하기는 하지만, alias(별명) 없이는 SQL 이 접근할 방법이 없음
+
+#### 뷰 란 무엇인가?
+- 뷰를 사용하면 새 열이 데이터베이스에 추가될 때마다 새 정보가 뷰에 반영되어 있기 때문에 유용함
+- 쿼리 상에서만 존재하는 테이블
+  - 가상테이블: 테이블처럼 행동하고, 테이블에서 할 수 있는 조작을 똑같이 수행 가능
+- 데이터베이스 내에 존재하지 않음 (VIEW 사용 시 생성 후 지워짐)
+- 이름 있는 뷰는 지속되는 가상테이블
+
+#### 뷰가 데이터베이스에서 유용한 이유
+1. 데이터에 대한 뷰를 만들면, 데이터베이스의 구조를 변경해도 테이블에 의존하는 어플리케이션을 변경할 필요가 없음
+2. 뷰는 복잡한 쿼리를 간단한 명령으로 단순하게 만듦 (복잡한 조인과 서브쿼리를 반복해서 사용하지 않게됨)
+3. 사용자에게 필요없는 정보를 숨기는 뷰를 만들 수 있음 (민감한 정보를 숨기면서 필요한 정보만을 볼 수 있게 함)
+
+#### 뷰에 INSERT, UPDATE, DELETE 하기 (변경 가능한/불가능한 VIEW)
+- 뷰에 SELECT 뿐 아니라 UPDATE, INSERT, DELETE 도 가능함
+  - 변경 가능한 뷰는 관련 테이블을 변경 할 수 있는 뷰
+  - 변경 가능한 뷰는 참조하는 테이블들의 열이 모두 NOT NULL 이어야 함 (뷰를 사용해서 INSERT 할 때, 값이 있어야 하는 모든 열에 값이 있는 것을 확신함)
+- 변경 불가능한 뷰 (업데이트가 불가능한 뷰) 는 뷰가 NOT NULL 이 아닌 열을 포함하는 경우
+  - 업데이트가 불가능한 뷰에는 생성과 삭제 말고 SELECT 만 할 수 있음
+  - 집계연산자(SUM, COUNT, AVG 등), 연산자(BETWEEN, HAVING, IN, NOT IN 등) 이 포함된 뷰는 업데이트 불가함
+- 뷰가 집계값(SUM, COUNT, AVG 등)을 사용하면 데이터 변경에 뷰를 사용할 수 없음
+- 뷰에 GROUP BY, DISTINCT, HAVING 이 포함되어 있으면 데이터를 변경 할 수 없음
+- MySQL 에서 데이터 무결성을 강제하는 등의 유용한 사용례가 있긴 하지만, 일반적으로 INSERT/UPDATE/DELETE 는 테이블을 직접 이용하는 것이 더 쉬움
+  - 뷰에 INSERT 하는 것이 편한 경우로, 뷰가 열 하나를 나타내고 그 외의 열들이 NULL 이나 기본값이 할당되어야 하는 경우
+  - 뷰에 WHERE 절을 추가하여 INSERT 데이터를 제한할 수 있음 (CHECK 제약조건 흉내)
+
+#### WITH CHECK OPTION 을 사용한 뷰(VIEW)
+- CHECK OPTION 이 있는 뷰는 데이터베이스 시스템에 INSERT/UPDATE 를 사용하는 문장을 확인해서 뷰의 WHERE 절에 허용되는지 확인한다.
+- MySQL 에서 CHECK OPTION 으로 CHECK 제약조건을 흉내낼 수 있음
+```mysql
+CREATE VIEW pb_quarters AS SELECT * FROM piggy_bank WHERE coin = 'Q';
+CREATE VIEW pb_dimes AS SELECT * FROM piggy_bank WHERE coin = 'D' WITH CHECK OPTION;
+
+-- 조건에 맞지 않지만 들어감
+INSERT INTO pb_quarters VALUES ('','D', 1942);
+
+-- 조건에 맞지 않아서 들어가지 않음
+INSERT INTO pb_dimes VALUES ('','Q', 1942);
+```
+```mysql
+-- 성별 란에 'M' or 'F' 입력을 강제하는 my_contacts VIEW
+CREATE VIEW my_contacts AS
+(
+    SELECT * FROM my_contacts
+    WHERE gender = 'M' OR gender = 'F'
+);
+```
+
+#### VIEW 삭제
+```mysql
+DROP VIEW pb_dimes;
+```
+
+> CHECK 제약조건과 VIEW 는, 여러 사람이 데이터베이스를 이용할 때 관리, 통제하는데 도움이 됨
+
+## 트랜젝션
+- 한 단위의 일을 수행하는 일련의 SQL 문
+- 트랜젝션 동안 모든 단계가 방해없이 완료될 수 없다면 어떤 것도 완료되지 않는다.
+- MySQL 의 경우, InnoDB 와 BDB 저장엔진(Storage Engine)들이 트랜잭션이 가능한 두가지 방법임 
+### ACID (트랜젝션의 특징)
+1. Atomic 원자성: 트랜젝션을 구성하는 모든 명령이 실행되거나 어떠한 명령도 실행되지 않아야 함 (일부만 수행 X)
+2. Consistency 일관성: 트랜젝션이 끝난 후 데이터베이스는 일관성을 유지해야 함 (시작과 끝이 맞아야 함)
+3. Isolation 독립성: 모든 트랜젝션은 동시에 일어나는 다른 트랜잭션과 상관없이 일관된 뷰를 갖는다.
+4. Durability 지속성: 트랜잭션이 끝난 후, 데이터베이스는 데이터를 정확히 저장하고 이상 상황으로부터 데이터를 보호한다.
+
+```mysql
+START TRANSACTION;
+SELECT * FROM piggy_bank;
+UPDATE piggy_bank SET coin = 'Q' where coin = 'P';
+SELECT * FROM piggy_bank;
+
+ROLLBACK; -- COMMIT;
+-- 변경 된 것 원 상태로 복구 (COMMIT; 의 경우는 변경된 내용 그대로 볼 수 있음)
+SELECT * FROM piggy_bank;
+```
+
 ## 12. 보안
