@@ -1053,6 +1053,7 @@ FROM clown_info AS c1;
 - NOT NULL, PRIMARY KEY, FOREIGN KEY, UNIQUE
 - +CHECK (넣으려는 값이 체크 조건에 맞지 않으면 에러가 발생함)
   - MySQL 에서는 체크가 데이터의 무결성을 강제하지 않음: 호환성을 위해 체크 제약조건을 사용해서 테이블을 만들 수 있지만 효과가 없음
+    - 8.0.16 부터 지원됨
     - VIEW 를 만들어서 WITH CHECK OPTION 으로 제약조건 흉내낼 수 있음
     - BEFORE INSERT, BEFORE UPDATE 의 trigger 를 만들 수 있다.
   - 체크 조건으로는 WHERE 절에 사용되는 조건들(AND,OR,IN,NOT,BETWEEN 등) 사용 가능함. 단, 서브쿼리는 사용할 수 없음.
@@ -1171,3 +1172,168 @@ SELECT * FROM piggy_bank;
 ```
 
 ## 12. 보안
+- 데이터베이스 사용자들에게 `사용자 계정`을 주어서, 데이터베이스에 할 수 있는 일과 할 수 없는 일을 제어한다.
+- 루트 계정 보호는 꼭 필요함
+
+<br>
+
+#### 단어정리
+- CREATE USER: 데이터베이스 시스템에 사용자 계정을 만들고 암호를 부여함
+- GRANT: 사용자에게 권한을 부여하여, 사용자가 테이블과 열에 무엇을 할 수 있는지 통제 가능함
+- REVOKE: 사용자로부터 권한을 없앰
+- WITH GRANT OPTION: 사용자가 자신이 가진 권한과 같은 권한을 다른 사람에게 줄 수 있음
+- ROLE: 역할을 가진 유저가 자신의 역할을 다른 사람에게 부여할 수 있음
+- WITH ADMIN OPTION: 권한의 집합, 역할이 있어 특정 권한들을 묶어 여러사람에게 할당할 수 있음
+
+<br>
+
+### root 사용자에게 암호를 부여
+```mysql
+SET PASSWORD FOR 'root'@'localhost' = PASSWORD('password');
+
+-- localhost: 사용하는 컴퓨터가 데이터베이스가 설치된 컴퓨터와 같은 컴퓨터
+-- 원격접속의 경우는, localhost 대신 hostname 을 사용할 수 있음
+SET PASSWORD FOR 'root'@'kumquats.oreilly.com' = PASSWORD('password');
+```
+
+### 사용자 추가
+- 사용자를 만들면서 권한을 줄 수 있지만, 처음에 권한을 어떻게 할 지 모르는 경우가 있음
+- 사용자를 만들고, 권한을 주는 것, 을 분리하면 데이터베이스 변경 시 사용자 권한을 추후에 변경할 수 있음
+```mysql
+CREATE USER elsie
+IDENTIFIED BY 'password';
+```
+```mysql
+GRANT SELECT ON tableName TO elsie;
+-- 위 테이블 관련 다른 테이블에 조인이나 서브쿼리가 필요하다면 전부 권한 추가해주어야함 
+```
+### GRANT
+```mysql
+GRANT INSERT ON tableName TO userName;
+
+GRANT DELETE ON tableName TO userName;
+
+-- 삭제 권한을 주는데, 다른 사람에게 해당 권한을 줄 권한도 부여한다.
+GRANT DELETE ON tableName TO userName WITH GRANT OPTION;
+
+-- 해당 테이블의 해당 열만을 SELECT 할 권한을 부여한다. 
+GRANT SELECT(columName) ON tableName TO userName;
+
+GRANT SELECT, INSERT ON tableName TO userName;
+
+-- CRUD 전체 권한 부여
+GRANT ALL ON tableName TO userName;
+```
+
+### REVOKE
+- 부여했던 권한을 삭제한다.
+```mysql
+REVOKE SELECT ON tableName FROM userName;
+
+-- 해당 유저의 권한은 그대로이고, 권한을 부여할 수 있는 권한만 제거한다. 
+REVOKE GRANT OPTION ON DELETE
+ON table_name
+FROM userName;
+```
+
+#### CASCADE (종속, 작은폭포) / RESTRICT (제한하다)
+- CASCADE: 권한 삭제 시에, 권한을 줄 수 있는 권한이 있는 유저가 주었던 권한까지 싹 다 제거하는 방법
+- RESTRICT: 권한 삭제 시에, 원하는 유저의 권한만 없애고 다른 유저에는 영향을 주지 않는 방법 (에러남)
+```mysql
+REVOKE DELETE ON tableName FROM userName CASCADE;
+REVOKE DELETE ON tableName FROM userName RESTRICT;
+```
+
+---
+- 열의 이름을 지정하는 GRANT 문의 경우에 INSERT 권한만 부여했다면? 
+  - 의미있는 행을 추가 못하므로 쓸데없음 (테이블에 열이 1개면 가능)
+  - 열에 대해 권한을 주는 것은 SELECT 문과 관련 없다면 보통 쓸모없음
+  
+<br>
+- 모든 데이터베이스의 모든 테이블에 SELECT 권한을 준다면?
+
+```mysql
+GRANT SELECT ON *.* TO userName;
+```
+
+<br>
+- REVOKE 의 기본은? 
+  - CASCADE
+
+<br>
+- 사용자에게 없는 권한을 REVOKE 하면?
+  - 권한 없다는 에러남
+
+<br>
+- 테이블, 열 외에 GRANT 나 REVOKE 를 사용 가능한 것은?
+  - VIEW 가 업데이트 가능하면, 테이블에서 사용하는 것과 같은 방식을 뷰에도 사용 가능
+
+#### ROLE
+- 특정 권한을 모아 그룹의 사용자들에게 적용하는 방법
+  - 여러 사용자에게 개인 계정을 주고, 그룹에게는 그룹이 필요한 권한을 주는 것이 필요함
+  - 전체의 개인계정, 공용 계정은 답이 아니고, 개인별 계정을 그룹으로 묶어서 관리하는 것이 좋음
+
+<br>
+
+- 역할을 만든다.
+```mysql
+-- mysql 에는 역할 기능이 없음?! 
+-- 8.0 부터 추가된 것으로 보임
+CREATE ROLE roleName;
+```
+
+- 만든 역할에 권한을 부여한다.
+```mysql
+GRANT SELECT, INSERT ON tableName TO roleName;
+```
+
+- 권한을 부여한 역할을 사용자에게 부여한다.
+```mysql
+GRANT roleName TO userName;
+```
+
+- 역할을 취소한다.
+```mysql
+REVOKE roleName FROM userName;
+```
+
+- 역할을 버린다.
+```mysql
+DROP ROLE roleName;
+```
+
+<br>
+
+- 데이터베이스의 모든 테이블에 권한을 부여하려면?
+```mysql
+GRANT SELECT, INSERT
+ON databaseName.*
+TO userName;
+```
+- 역할이 사용자에게 할당되었는데도 버릴 수 있나?
+  - 있음, 조심하라
+
+- 사용자가 한 번에 하나 이상의 역할을 가질 수도 있나?
+  - 있음.
+  - 권한끼리 충돌이 없도록 해야함
+  - **거절하는 권한과 허용하는 권한이 충돌하면, 거절하는 권한이 우선임**
+
+### WITH ADMIN OPTION
+- 위의 WITH GRANT OPTION 처럼, 역할도 해당 역할을 가진 사용자가 다른 사용자에게 역할의 권한을 줄 수 있음
+```mysql
+-- 역할 권한을 줄 권한까지 부여한다.
+GRANT roleName TO userName WITH ADMIN OPTION;
+```
+- 역할의 REVOKE 또한 동일하게 CASCADE / RESTRICT 키워드를 갖고 있음
+  - CASCADE: 연결된 모든 사용자까지 권한 제거
+  - RESTRICT: 연결된 사용자가 있으면 에러
+
+<br>
+
+- 한 문장에서 유저를 만들고 권한을 주는 방법
+```mysql
+GRANT SELECT ON tableName
+TO userName
+IDENTIFIED BY 'password';
+```
+
