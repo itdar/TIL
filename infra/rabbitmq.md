@@ -32,7 +32,7 @@
   - 프로그래밍 언어 중립적
 - 구성
   - 아래 그림에서, 큰 상관은 없을 것 같지만 Publisher 는 `Producer` 로 바꾸는게 나을 것 같고.. Server 는 `Broker`로 보면 될 것 같다. 
-  - ![img.png](https://github.com/itdar/TIL/zdata/amqp-architecture.png)
+  - ![img.png](https://github.com/itdar/TIL/blob/main/zdata/amqp-architecture.png?raw=true)
   - Exchange: `Producer` 에서 수신한 메시지를 적절한 `Queue` 또는 다른 `Exchange` 로 분배하는 라우터의 기능을 한다. 
     - 각 `Queue` 나 `Exchange` 는 `Binding`을 사용해서 `Exchange` 에 바인드 되어 있고, 따라서 `Exchange` 는 수신한 메시지를 이 `Binding` 에 따라 적당한 `Queue`나 `Exchange`로 라우팅한다. 
     - `Binding` 과 메시지를 매칭시키기 위한 라우팅 알고리즘을 정의한것을 `Exchange type`이라고 하고, `Exchange type`은 라우팅 알고리즘의 클래스이다. `Broker`는 여러개의 exchange type 인스턴스를 가질 수 있다. `Binding`과 `Exchange type`이 혼동될 수 있는데, 
@@ -45,7 +45,7 @@
     - AMQP의 표준 `Exchange type`은 이 라우팅 키를 이용하도록 되어있다.
   - Standard Exchange Type: 대부분의 MQ 에서 가능한 여러가지 상황에 대하여 AMQP 에서 정의한 `표준 라우팅 알고리즘`
     - 외우기 보다는.. 브로커 구성 시 아래 내용 참조  
-    - ![img.png](https://github.com/itdar/TIL/zdata/mq-standardExchangeType.png)
+    - ![img.png](https://github.com/itdar/TIL/blob/main/zdata/mq-standardExchangeType.png?raw=true)
 
 <br>
 
@@ -73,7 +73,7 @@
   - Scale-out 을 고려한 설계
   - ![](https://www.cloudamqp.com/img/blog/kafka-setup.png)
 - 대략 아래를 고려해서 선택하면 된다.  
-  - ![img.png](https://github.com/itdar/TIL/zdata/rabbitmq_vs_kafka.png)
+  - ![img.png](https://github.com/itdar/TIL/blob/main/zdata/rabbitmq_vs_kafka.png?raw=true)
 
 <br>
 
@@ -98,11 +98,11 @@ http://localhost:15672
 // pw: guest
 ```
 5. RabbitMQ 에서 `Queue` 생성 (이름은 testQueue, 아래 그림 참조)  
-![img_1.png](https://github.com/itdar/TIL/zdata/rabbitmq_create_queue.png)
+![img_1.png](https://github.com/itdar/TIL/blob/main/zdata/rabbitmq_create_queue.png?raw=true)
 6. IDE 에서 Consumer App 실행
 7. IDE 에서 Producer 의 RabbitMQHelperTest 클래스 테스트메서드 실행해서 메시지 보내기
 8. consumer 에서 출력되는 메시지 확인  
-![img.png](https://github.com/itdar/TIL/zdata/rabbitmq_example_success.png)
+![img.png](https://github.com/itdar/TIL/blob/main/zdata/rabbitmq_example_success.png?raw=true)
 
 
 ## Reference
