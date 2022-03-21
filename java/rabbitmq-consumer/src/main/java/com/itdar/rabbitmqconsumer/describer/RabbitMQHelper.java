@@ -19,11 +19,12 @@ public class RabbitMQHelper {
 
     }
 
-    @RabbitListener(bindings = @QueueBinding(
-        value = @Queue(value = "testQueue"),
-        exchange = @Exchange(value = "direct"),
-        key = "testQueue")
-    )
+//    @RabbitListener(bindings = @QueueBinding(
+//        value = @Queue(value = "testQueue"),
+//        exchange = @Exchange(value = "direct"),
+//        key = "testQueue")
+//    )
+    @RabbitListener(queues = "testQueue")
     public void listen(final String message){
 
         System.out.println("Consuming : " + message);
@@ -33,20 +34,16 @@ public class RabbitMQHelper {
     @Bean
     public RabbitTemplate rabbitTemplate() {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory());
-//        rabbitTemplate.setChannelTransacted(true);
-//        rabbitTemplate.setMessageConverter(jsonMessageConverter(objectMapper));
+
         return rabbitTemplate;
     }
 
     @Bean
-    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(ObjectMapper objectMapper) {
+    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory() {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory());
         factory.setConcurrentConsumers(10);
         factory.setMaxConcurrentConsumers(50);
-//        factory.setMessageConverter(jsonMessageConverter(objectMapper));
-        // // factory.setTransactionManager(rabbitTransactionManager());
-//        factory.setAdviceChain(interceptor(objectMapper));
         return factory;
     }
 
@@ -56,8 +53,8 @@ public class RabbitMQHelper {
         connectionFactory.setPassword("guest");
         connectionFactory.setHost("localhost");
         connectionFactory.setPort(5672);
-        connectionFactory.setVirtualHost("gino-vhost");
-//        connectionFactory.setCacheMode(CachingConnectionFactory.CacheMode.CONNECTION);
+        connectionFactory.setVirtualHost("/");
+        connectionFactory.setCacheMode(CachingConnectionFactory.CacheMode.CONNECTION);
         return connectionFactory;
     }
 

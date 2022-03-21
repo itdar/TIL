@@ -20,7 +20,7 @@ public class RabbitMQHelper {
         connectionFactory.setPassword("guest");
         connectionFactory.setHost("localhost");
         connectionFactory.setPort(5672);
-        connectionFactory.setVirtualHost("gino-vhost");
+        connectionFactory.setVirtualHost("/");
 
         return connectionFactory;
     }
