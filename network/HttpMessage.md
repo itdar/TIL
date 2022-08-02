@@ -120,6 +120,7 @@
 | Referer | 리퀘스트 중의 URI 를 취득하는 곳|  |
 | TE | 전송 인코딩의 우선순위|  |
 | User-Agent | HTTP 클라이언트 정보 |  |
+
 <br>
 
 #### 리스폰스 헤더 필드
@@ -134,6 +135,7 @@
 | Server | HTTP 서버 정보 |  |
 | Vary | 프록시 서버에 대한 캐시 관리 정보 |  |
 | WWW-Authenticate | 서버의 클라이언트 인증을 위한 정보 |  |
+
 <br>
 
 #### 엔티티 헤더 필드
@@ -154,5 +156,13 @@
 ---
 
 ### HTTPS 란?
+ IP 위에 TCP 위에 HTTP 를 사용하는데 SSL(TLS) 로 암호화를 해서 보안성을 높였다.  
+대칭키를 사용하는데, 이 대칭키를 교환하기 위해서 인증기관과 서버의 비대칭키를 사용한다.
 
 
+
+---
+
+#### Reference
+- 그림으로 배우는 Http Network Basic
+- https://developer.mozilla.org/ko/docs/Web/HTTP/Messages
