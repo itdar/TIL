@@ -17,7 +17,7 @@ for (int i = 0; i < numString.length(); ++i) {
 ascii는 가끔 썼지만 저런 곳에 사용하는 것은 처음봐서 포스팅한다.
 
 
-![img.png](../zdata/img.png)
+![img.png](../zdata/asciiTable.png)
 
 위와 같이 원래 숫자 0 은 Character 아스키넘버로 48 (Decimal) 이다.
 

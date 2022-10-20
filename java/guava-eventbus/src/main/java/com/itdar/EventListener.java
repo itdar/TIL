@@ -21,8 +21,15 @@ public class EventListener {
     public void someCustomEvent(CustomEvent customEvent) throws InterruptedException {
         System.out.println(" >> customEvent = " + customEvent);
 
+        System.out.println("test start");
+        Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+        for (Thread thread : threadSet) {
+            System.out.println("Name: " + thread.getName() + " || ID: " + thread.getId() + " || State: " + thread.getState());
+        }
+        System.out.println("test end");
+
         if (customEvent.isKill()) {
-            Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+//            Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
             for (Thread thread : threadSet) {
                 if (thread.getName().equals(customEvent.getThreadName())) {
                     for (int i = 1; i <= 3; ++i) {
